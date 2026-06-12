@@ -1,0 +1,3352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D&D Scene Controller</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d0b0e;
+    --parchment: #1a1520;
+    --parchment-mid: #221c2c;
+    --parchment-light: #2e2540;
+    --gold: #c9a84c;
+    --gold-bright: #e8c96a;
+    --gold-dim: #7a6230;
+    --crimson: #8b1a1a;
+    --crimson-bright: #c0392b;
+    --arcane: #5b3fa0;
+    --arcane-bright: #7c5cbf;
+    --text: #f0ece4;
+    --text-dim: #c8bfb0;
+    --text-muted: #8a8070;
+    --border: #3a2f50;
+    --border-gold: #4a3a20;
+    --success: #2d6a3f;
+    --error: #6a2020;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--ink);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle parchment texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      radial-gradient(ellipse at 20% 50%, rgba(91,63,160,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(139,26,26,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 24px 32px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(13,11,14,0.95) 0%, transparent 100%);
+  }
+
+  .header-title {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .header-title h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.12em;
+    text-shadow: 0 0 20px rgba(201,168,76,0.3);
+  }
+
+  .header-title span {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-family: 'Cinzel', serif;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  /* ── RUNE DIVIDER ── */
+  .rune-divider {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    letter-spacing: 0.4em;
+    padding: 4px 0;
+    opacity: 0.5;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    padding: 8px 16px;
+    border-radius: 3px;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text-dim);
+  }
+  .btn-ghost:hover {
+    border-color: var(--gold-dim);
+    color: var(--gold);
+  }
+
+  .btn-gold {
+    background: linear-gradient(135deg, #2a2010, #1a1508);
+    border-color: var(--gold-dim);
+    color: var(--gold);
+  }
+  .btn-gold:hover {
+    background: linear-gradient(135deg, #3a2e18, #2a2010);
+    border-color: var(--gold);
+    color: var(--gold-bright);
+    box-shadow: 0 0 12px rgba(201,168,76,0.2);
+  }
+
+  .btn-crimson {
+    background: linear-gradient(135deg, #2a0e0e, #1a0808);
+    border-color: var(--crimson);
+    color: #e08080;
+  }
+  .btn-crimson:hover {
+    background: linear-gradient(135deg, #3a1414, #2a0e0e);
+    border-color: var(--crimson-bright);
+    box-shadow: 0 0 12px rgba(139,26,26,0.3);
+  }
+
+  .btn-arcane {
+    background: linear-gradient(135deg, #1e1530, #130e20);
+    border-color: var(--arcane);
+    color: #b090e0;
+  }
+  .btn-arcane:hover {
+    background: linear-gradient(135deg, #2a1e40, #1e1530);
+    border-color: var(--arcane-bright);
+    box-shadow: 0 0 12px rgba(91,63,160,0.3);
+  }
+
+  .btn-sm {
+    font-size: 10px;
+    padding: 5px 10px;
+  }
+
+  .btn-icon {
+    padding: 7px 10px;
+    font-size: 14px;
+    font-family: sans-serif;
+  }
+
+  /* ── STATUS BAR ── */
+  #status-bar {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 8px 32px;
+    background: var(--parchment);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.05em;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+  }
+  .status-dot.connected { background: #4caf50; box-shadow: 0 0 6px #4caf50; }
+  .status-dot.disconnected { background: #666; }
+  .status-dot.error { background: var(--crimson-bright); box-shadow: 0 0 6px var(--crimson-bright); }
+
+  .status-item { display: flex; align-items: center; }
+
+  /* ── MAIN LAYOUT ── */
+  main {
+    position: relative;
+    z-index: 5;
+    padding: 28px 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* ── SECTION HEADER ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-title::before,
+  .section-title::after {
+    content: '';
+    height: 1px;
+    width: 24px;
+    background: var(--border);
+  }
+
+  /* ── SCENE GRID ── */
+  #scene-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  /* ── SCENE CARD ── */
+  .scene-card {
+    position: relative;
+    background: var(--parchment);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    transition: all 0.25s;
+  }
+
+  .scene-card:hover {
+    border-color: var(--border-gold);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  .scene-card-accent {
+    height: 3px;
+    width: 100%;
+  }
+
+  .scene-card-body {
+    padding: 18px 20px 16px;
+  }
+
+  .scene-name {
+    font-family: 'Cinzel', serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  .scene-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .scene-meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .scene-meta .meta-icon {
+    opacity: 0.6;
+    flex-shrink: 0;
+  }
+
+  .scene-meta .meta-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+  }
+
+  .scene-color-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+
+  .scene-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  /* Big trigger button */
+  .btn-trigger {
+    flex: 1;
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    padding: 10px;
+    border-radius: 3px;
+    border: 1px solid var(--gold-dim);
+    background: linear-gradient(135deg, #2a2010, #1a1508);
+    color: var(--gold);
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .btn-trigger::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(201,168,76,0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .btn-trigger:hover {
+    border-color: var(--gold);
+    color: var(--gold-bright);
+    box-shadow: 0 0 16px rgba(201,168,76,0.25);
+  }
+
+  .btn-trigger:hover::before { opacity: 1; }
+
+  .btn-trigger.firing {
+    animation: triggerPulse 0.6s ease;
+  }
+
+  .btn-trigger.active-scene {
+    border-color: var(--gold);
+    color: var(--gold-bright);
+    background: linear-gradient(135deg, #2e2614, #1e1a0a);
+  }
+
+  @keyframes triggerPulse {
+    0% { box-shadow: 0 0 0 rgba(201,168,76,0); }
+    50% { box-shadow: 0 0 30px rgba(201,168,76,0.5); border-color: var(--gold-bright); }
+    100% { box-shadow: 0 0 0 rgba(201,168,76,0); }
+  }
+
+  .btn-edit-scene {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 8px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    line-height: 1;
+  }
+  .btn-edit-scene:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+  .btn-delete-scene {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 8px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    line-height: 1;
+  }
+  .btn-delete-scene:hover { border-color: var(--crimson); color: #e08080; }
+
+  .btn-prev-next {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 8px 11px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    line-height: 1;
+    display: none;
+  }
+  .btn-prev-next.visible { display: inline-flex; align-items: center; }
+  .btn-prev-next:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+  /* Empty state */
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+  }
+
+  .empty-state .empty-rune {
+    font-size: 36px;
+    margin-bottom: 12px;
+    opacity: 0.3;
+  }
+
+  .empty-state h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .empty-state p {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  /* ── MODAL OVERLAY ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    padding: 20px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--parchment);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+  }
+
+  .modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-title {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 3px;
+    transition: color 0.2s;
+    line-height: 1;
+  }
+  .modal-close:hover { color: var(--text); }
+
+  .modal-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  /* ── FORM FIELDS ── */
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .field input[type="text"],
+  .field input[type="password"],
+  .field input[type="url"] {
+    background: var(--parchment-mid);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  .field input:focus {
+    outline: none;
+    border-color: var(--gold-dim);
+  }
+
+  .field input::placeholder { color: var(--text-muted); }
+
+  .field-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* Color picker row */
+  .color-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .color-row input[type="color"] {
+    width: 48px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--parchment-mid);
+    cursor: pointer;
+    padding: 2px;
+    flex-shrink: 0;
+  }
+
+  .color-presets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .color-preset {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .color-preset:hover,
+  .color-preset.active {
+    border-color: rgba(255,255,255,0.5);
+    transform: scale(1.15);
+  }
+
+  /* Scene mode toggles */
+  .toggle-group {
+    display: flex;
+    gap: 8px;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    padding: 8px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .toggle-btn.active {
+    border-color: var(--gold-dim);
+    background: linear-gradient(135deg, #2a2010, #1a1508);
+    color: var(--gold);
+  }
+
+  /* ── SETTINGS PAGE ── */
+  #settings-page {
+    display: none;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  #settings-page.active { display: block; }
+  #main-page { display: block; }
+  #main-page.hidden { display: none; }
+
+  .settings-section {
+    background: var(--parchment);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .settings-section-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .settings-section-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .settings-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  /* Auth status badge */
+  .auth-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+
+  .auth-badge.ok {
+    border-color: #2d6a3f;
+    color: #6fbe8a;
+    background: rgba(45,106,63,0.15);
+  }
+
+  .auth-badge.not-ok {
+    border-color: #4a3a20;
+    color: var(--text-muted);
+    background: transparent;
+  }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--parchment-light);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 20px;
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--text);
+    z-index: 200;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.success { border-color: var(--success); color: #6fbe8a; }
+  #toast.error { border-color: var(--error); color: #e08080; }
+
+  /* ── HUE SETUP GUIDE ── */
+  .setup-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .setup-step {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .step-num {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--gold-dim);
+    border: 1px solid var(--border-gold);
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .step-text { line-height: 1.5; }
+  .step-text code {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    background: var(--parchment-mid);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 2px;
+    color: var(--gold);
+  }
+
+  /* ── SCENE ONLY TOGGLES ── */
+  .scene-only-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .only-btn {
+    font-size: 10px;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .only-btn:hover { border-color: var(--gold-dim); color: var(--text-dim); }
+
+  .pause-btn.paused {
+    border-color: var(--gold-dim);
+    color: var(--gold);
+    background: linear-gradient(135deg, #2a2010, #1a1508);
+  }
+
+  /* ── DRAG AND DROP ── */
+  .drag-handle {
+    cursor: grab;
+    color: var(--text-muted);
+    font-size: 14px;
+    padding: 0 4px;
+    opacity: 0.4;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+    touch-action: none;
+    line-height: 1;
+  }
+  .drag-handle:hover { opacity: 0.8; }
+  .scene-card.dragging { opacity: 0.4; border-color: var(--gold-dim); }
+  .scene-card.drag-over { border-color: var(--gold); box-shadow: 0 0 12px rgba(201,168,76,0.2); }
+  .sidebar-item.dragging { opacity: 0.4; }
+  .sidebar-item.drag-over { border-left-color: var(--gold); background: rgba(201,168,76,0.06); }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--ink); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    header { padding: 16px 16px 14px; }
+    main { padding: 20px 16px; }
+    #status-bar { padding: 8px 16px; gap: 12px; }
+    #scene-grid { grid-template-columns: 1fr; }
+  }
+
+  .no-hue-warning {
+    background: rgba(139,26,26,0.1);
+    border: 1px solid rgba(139,26,26,0.3);
+    border-radius: 3px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #e08080;
+    display: none;
+  }
+  .no-hue-warning.visible { display: block; }
+
+  /* Individual controls row */
+  .individual-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    padding: 14px 16px;
+    background: var(--parchment);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .individual-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-right: 4px;
+  }
+
+  #active-scene-name {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── SIDEBAR + BODY LAYOUT ── */
+  .app-body {
+    display: flex;
+    min-height: calc(100vh - 90px);
+  }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: 200px;
+    flex-shrink: 0;
+    background: var(--parchment);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 0;
+  }
+
+  .sidebar-section-label {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 0 16px 8px;
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+    gap: 6px;
+  }
+
+  .sidebar-item:hover {
+    background: var(--parchment-mid);
+    color: var(--text);
+  }
+
+  .sidebar-item.active {
+    border-left-color: var(--gold);
+    color: var(--gold);
+    background: rgba(201,168,76,0.06);
+  }
+
+  .sidebar-item .folder-icon { opacity: 0.6; font-size: 12px; }
+  .sidebar-item .scene-count {
+    font-size: 9px;
+    color: var(--text-muted);
+    background: var(--parchment-mid);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1px 6px;
+    margin-left: auto;
+  }
+
+  .sidebar-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 10px 16px;
+  }
+
+  .sidebar-add-folder {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.15s;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    text-transform: uppercase;
+  }
+  .sidebar-add-folder:hover { color: var(--gold); }
+
+  .sidebar-folder-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .sidebar-item:hover .sidebar-folder-actions { opacity: 1; }
+
+  .folder-action-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 1px 3px;
+    border-radius: 2px;
+    line-height: 1;
+    transition: color 0.15s;
+  }
+  .folder-action-btn:hover { color: var(--text); }
+  .folder-action-btn.del:hover { color: #e08080; }
+
+  /* ── MAIN CONTENT AREA ── */
+  #main-content {
+    flex: 1;
+    padding: 28px 32px;
+    min-width: 0;
+  }
+
+  /* ── IMPORT MODAL ── */
+  .playlist-result {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--parchment-mid);
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .playlist-result:hover { border-color: var(--gold-dim); }
+  .playlist-result.selected { border-color: var(--gold); background: rgba(201,168,76,0.06); }
+  .playlist-result input[type=checkbox] { accent-color: var(--gold); flex-shrink: 0; }
+  .playlist-result-info { flex: 1; min-width: 0; }
+  .playlist-result-name { font-size: 13px; color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .playlist-result-meta { font-size: 11px; color: var(--text-muted); }
+  .playlist-results-list { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; }
+
+  /* ── INDEPENDENT CONTROLS BAR ── */
+  .quick-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: var(--parchment);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .qc-section-title {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 10px 16px 6px;
+  }
+
+  /* Folder tabs */
+  .qc-folder-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 16px 10px;
+  }
+
+  .qc-folder-tab {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 5px 12px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .qc-folder-tab:hover { border-color: var(--gold-dim); color: var(--text-dim); }
+  .qc-folder-tab.active { border-color: var(--gold); background: rgba(201,168,76,0.08); color: var(--gold); }
+
+  /* Playlist buttons */
+  .qc-playlist-panel {
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 16px 12px;
+    border-top: 1px solid var(--border);
+    background: var(--parchment-mid);
+  }
+  .qc-playlist-panel.visible { display: flex; }
+
+  .qc-playlist-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .qc-playlist-btn:hover { border-color: var(--gold-dim); color: var(--text); }
+  .qc-playlist-btn.selected { border-color: var(--gold); background: rgba(201,168,76,0.1); color: var(--gold); }
+
+  /* Lights row */
+  .qc-row {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    align-items: center;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    gap: 12px;
+  }
+
+  .qc-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  .qc-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  .qc-select {
+    flex: 1;
+    min-width: 0;
+    background: var(--parchment-mid);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+  }
+  .qc-select:focus { outline: none; border-color: var(--gold-dim); }
+
+  .qc-activate-row {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .quick-label {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Active scene strip — slimmed down, just name + transport */
+  .active-strip {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(201,168,76,0.05);
+    border: 1px solid var(--border-gold);
+    border-radius: 4px;
+    margin-bottom: 12px;
+  }
+  .active-strip.visible { display: flex; }
+
+  .active-strip-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .active-strip-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .active-strip-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .now-playing-title {
+    font-size: 12px;
+    color: var(--text);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .now-playing-artist {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .volume-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .volume-icon {
+    font-size: 12px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  input[type=range].volume-slider {
+    flex: 1;
+    height: 3px;
+    accent-color: var(--gold);
+    cursor: pointer;
+  }
+
+  .volume-pct {
+    font-size: 10px;
+    color: var(--text-muted);
+    min-width: 28px;
+    text-align: right;
+    font-family: 'Cinzel', serif;
+  }
+
+  .progress-time {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: 'Cinzel', serif;
+    white-space: nowrap;
+    min-width: 32px;
+  }
+
+  .progress-bar-track {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--gold-dim);
+    border-radius: 2px;
+    transition: width 0.5s linear;
+    width: 0%;
+  }
+
+
+
+  @media (max-width: 700px) {
+    .app-body { flex-direction: column; }
+    #sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; flex-wrap: wrap; padding: 8px; }
+    .sidebar-section-label { display: none; }
+    .sidebar-item { border-left: none; border-bottom: 2px solid transparent; padding: 6px 10px; font-size: 10px; }
+    .sidebar-item.active { border-bottom-color: var(--gold); border-left-color: transparent; }
+    #main-content { padding: 16px; }
+    .quick-control-group { min-width: 100%; }
+    .quick-divider { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-title">
+    <h1>⚔ Scene Controller</h1>
+    <span>Dungeons &amp; Dragons</span>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-crimson" id="btn-reset" onclick="resetToBaseline()" title="Pause music and restore baseline lights">⟳ Reset</button>
+    <button class="btn btn-ghost" onclick="showPage('settings')">⚙ Settings</button>
+  </div>
+</header>
+
+<!-- STATUS BAR -->
+<div id="status-bar">
+  <div class="status-item" style="gap:8px">
+    <span class="status-dot disconnected" id="spotify-dot"></span>
+    <span id="spotify-status">Spotify: Not connected</span>
+    <button id="spotify-connect-btn" onclick="connectSpotify()" style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:3px;border:1px solid var(--gold-dim);background:transparent;color:var(--gold);cursor:pointer;display:none">Connect</button>
+  </div>
+  <div class="status-item">
+    <span class="status-dot disconnected" id="hue-dot"></span>
+    <span id="hue-status">Hue: Not configured</span>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════ MAIN PAGE ═══════════════════════════════════ -->
+<div id="main-page">
+
+  <div class="app-body">
+
+    <!-- SIDEBAR -->
+    <div id="sidebar">
+      <div class="sidebar-section-label">Folders</div>
+
+      <div class="sidebar-item active" id="sidebar-all" onclick="selectFolder(null)">
+        <span class="folder-icon">✦</span>
+        <span>All Scenes</span>
+        <span class="scene-count" id="count-all">0</span>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <div id="folder-list"><!-- folders rendered here --></div>
+
+      <div class="sidebar-divider"></div>
+      <button class="sidebar-add-folder" onclick="openAddFolder()">+ New Folder</button>
+      <button class="sidebar-add-folder" onclick="openImportModal()" style="color:var(--text-muted)">⬇ Import from Spotify</button>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main-content">
+
+      <!-- Independent quick controls -->
+      <div class="quick-controls">
+
+        <!-- Music: folder tabs -->
+        <div class="qc-section-title">🎵 Music</div>
+        <div class="qc-folder-tabs" id="qc-folder-tabs">
+          <!-- rendered by JS -->
+        </div>
+        <div class="qc-playlist-panel" id="qc-playlist-panel">
+          <!-- rendered by JS -->
+        </div>
+
+        <!-- Lights row -->
+        <div class="qc-row">
+          <div class="qc-label">💡 Lights</div>
+          <div class="qc-controls">
+            <select id="quick-hue-select" class="qc-select">
+              <option value="">— Select scene —</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Activate -->
+        <div class="qc-activate-row">
+          <button class="btn btn-gold" id="btn-quick-activate" onclick="quickActivate()">✦ Activate</button>
+        </div>
+
+      </div>
+
+      <!-- Active scene strip -->
+      <div class="active-strip" id="active-strip">
+
+        <!-- Top row: scene name + transport -->
+        <div class="active-strip-top">
+          <span class="active-strip-label" id="active-scene-label">—</span>
+          <button class="only-btn" onclick="skipTrack('prev', null)" title="Previous">⏮</button>
+          <button class="only-btn pause-btn" id="btn-pause" onclick="togglePause()">⏸ Pause</button>
+          <button class="only-btn" onclick="skipTrack('next', null)" title="Next">⏭</button>
+        </div>
+
+        <!-- Now playing info -->
+        <div class="active-strip-bottom" id="now-playing-info" style="display:none">
+          <div class="now-playing-title" id="now-playing-title">—</div>
+          <div class="now-playing-artist" id="now-playing-artist">—</div>
+          <div class="progress-row">
+            <span class="progress-time" id="progress-current">0:00</span>
+            <div class="progress-bar-track" onclick="seekToPosition(event)">
+              <div class="progress-bar-fill" id="progress-fill"></div>
+            </div>
+            <span class="progress-time" id="progress-total">0:00</span>
+          </div>
+          <div class="volume-row">
+            <span class="volume-icon">🔊</span>
+            <input type="range" class="volume-slider" id="volume-slider" min="0" max="100" value="50"
+              oninput="onVolumeInput(this.value)" onchange="onVolumeChange(this.value)">
+            <span class="volume-pct" id="volume-pct">50%</span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Section header -->
+      <div class="section-header">
+        <div class="section-title" id="section-title">All Scenes</div>
+        <button class="btn btn-gold btn-sm" onclick="openAddScene()">+ New Scene</button>
+      </div>
+
+      <div id="scene-grid">
+        <div class="empty-state">
+          <div class="empty-rune">✦</div>
+          <h3>No Scenes Yet</h3>
+          <p>Click <strong>+ New Scene</strong> to conjure your first scene</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════ SETTINGS PAGE ═══════════════════════════════════ -->
+<div id="settings-page">
+<main>
+
+  <div class="section-header" style="margin-bottom:24px">
+    <div class="section-title">Settings</div>
+    <button class="btn btn-ghost" onclick="showPage('main')">← Back to Scenes</button>
+  </div>
+
+  <!-- SPOTIFY -->
+  <div class="settings-section">
+    <div class="settings-section-header">
+      🎵 Spotify
+    </div>
+    <div class="settings-section-body">
+      <div class="field">
+        <label>Status</label>
+        <div id="spotify-auth-badge" class="auth-badge not-ok">
+          <span class="status-dot disconnected"></span> Not connected
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn btn-gold" onclick="connectSpotify()">Connect Spotify</button>
+        <button class="btn btn-ghost" onclick="disconnectSpotify()">Disconnect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHILIPS HUE -->
+  <div class="settings-section">
+    <div class="settings-section-header">
+      💡 Philips Hue
+    </div>
+    <div class="settings-section-body">
+
+      <div class="setup-steps">
+        <div class="setup-step">
+          <div class="step-num">1</div>
+          <div class="step-text">Find your Bridge IP: open a browser and go to <code>https://discovery.meethue.com</code> — copy the <code>internalipaddress</code> value.</div>
+        </div>
+        <div class="setup-step">
+          <div class="step-num">2</div>
+          <div class="step-text">Press the <strong>physical button</strong> on top of your Hue Bridge, then click <strong>Register</strong> below within 30 seconds.</div>
+        </div>
+        <div class="setup-step">
+          <div class="step-num">3</div>
+          <div class="step-text">Once registered, your username/key is saved automatically.</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Bridge IP Address</label>
+        <input type="text" id="cfg-hue-ip" placeholder="e.g. 192.168.1.42" autocomplete="off" spellcheck="false">
+      </div>
+
+      <div class="field">
+        <label>API Username (auto-filled after registration)</label>
+        <input type="text" id="cfg-hue-user" placeholder="Will be filled automatically" autocomplete="off" spellcheck="false">
+      </div>
+
+      <div id="no-hue-warning" class="no-hue-warning">
+        Could not reach bridge. Check the IP address and try again.
+      </div>
+
+      <div class="settings-actions">
+        <button class="btn btn-gold" onclick="registerHue()">Register with Bridge</button>
+        <button class="btn btn-ghost" onclick="saveHueManual()">Save Manually</button>
+        <button class="btn btn-ghost" onclick="testHue()">Test Connection</button>
+      </div>
+
+      <div class="field" style="margin-top:8px">
+        <label>Default Light Transition</label>
+        <div style="display:flex;align-items:center;gap:12px">
+          <input type="range" id="cfg-transition-time" min="0" max="30" step="0.5" value="2"
+            style="flex:1;accent-color:var(--gold)"
+            oninput="document.getElementById('cfg-transition-label').textContent = this.value == 0 ? 'Instant' : this.value + 's'">
+          <span id="cfg-transition-label" style="font-size:13px;color:var(--text-dim);min-width:50px;text-align:right">2s</span>
+        </div>
+        <div class="field-hint">How long lights take to fade when a scene is triggered.</div>
+      </div>
+
+      <div class="field" style="margin-top:8px">
+        <label>Baseline Hue Scene</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="cfg-baseline-hue-scene" style="flex:1;background:var(--parchment-mid);border:1px solid var(--border);border-radius:3px;padding:9px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px">
+            <option value="">— None —</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="loadHueScenes()" title="Refresh">↻ Refresh</button>
+        </div>
+        <div class="field-hint">This scene activates when you hit the Reset button in the header.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVE ALL -->
+  <div style="display:flex;justify-content:flex-end;gap:10px">
+    <button class="btn btn-ghost" onclick="showPage('main')">Cancel</button>
+    <button class="btn btn-gold" onclick="saveAllSettings()">Save All Settings</button>
+  </div>
+
+</main>
+</div>
+
+<!-- ═══════════════════════════════════ ADD/EDIT SCENE MODAL ═══════════════════════════════════ -->
+<div class="modal-overlay" id="scene-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="scene-modal-title">New Scene</div>
+      <button class="modal-close" onclick="closeModal('scene-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="field">
+        <label>Scene Name</label>
+        <input type="text" id="scene-name-input" placeholder="e.g. Snowy Mountain Pass" maxlength="40">
+      </div>
+
+      <div class="field">
+        <label>Hue Scene</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="scene-hue-scene-select" style="flex:1;background:var(--parchment-mid);border:1px solid var(--border);border-radius:3px;padding:9px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px">
+            <option value="">— No lights —</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="loadHueScenes()" title="Refresh Hue scenes">↻ Refresh</button>
+        </div>
+        <div class="field-hint" id="hue-scene-hint">Connect your Hue Bridge in Settings to see your scenes here.</div>
+      </div>
+
+      <div class="field">
+        <label>Spotify Playlist URL</label>
+        <input type="url" id="scene-spotify-input" placeholder="https://open.spotify.com/playlist/..." spellcheck="false">
+        <div class="field-hint">Share → Copy link from Spotify. Leave blank to skip music.</div>
+      </div>
+
+      <div class="field">
+        <label>What to trigger</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="mode-both" onclick="setSceneMode('both')">Lights + Music</button>
+          <button class="toggle-btn" id="mode-lights" onclick="setSceneMode('lights')">Lights Only</button>
+          <button class="toggle-btn" id="mode-music" onclick="setSceneMode('music')">Music Only</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Folder (optional)</label>
+        <select id="scene-folder-select" style="background:var(--parchment-mid);border:1px solid var(--border);border-radius:3px;padding:9px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;width:100%">
+          <option value="">— No folder —</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Light Transition Override</label>
+        <div style="display:flex;align-items:center;gap:12px">
+          <input type="range" id="scene-transition-input" min="-1" max="30" step="0.5" value="-1"
+            style="flex:1;accent-color:var(--gold)"
+            oninput="updateTransitionLabel(this.value)">
+          <span id="scene-transition-label" style="font-size:13px;color:var(--text-dim);min-width:70px;text-align:right">Use global</span>
+        </div>
+        <div class="field-hint">Override the global fade time for this scene. Drag left for "Use global".</div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('scene-modal')">Cancel</button>
+      <button class="btn btn-gold" onclick="saveScene()">Save Scene</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADD/EDIT FOLDER MODAL ═══ -->
+<div class="modal-overlay" id="folder-modal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <div class="modal-title" id="folder-modal-title">New Folder</div>
+      <button class="modal-close" onclick="closeModal('folder-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Folder Name</label>
+        <input type="text" id="folder-name-input" placeholder="e.g. Combat, Tavern, Exploration" maxlength="30">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('folder-modal')">Cancel</button>
+      <button class="btn btn-gold" onclick="saveFolder()">Save Folder</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ IMPORT FROM SPOTIFY MODAL ═══ -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title">Import from Spotify</div>
+      <button class="modal-close" onclick="closeModal('import-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="field">
+        <label>Search your Spotify playlists</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="import-search-input" placeholder="e.g. combat, tavern, ambient..." style="flex:1" onkeydown="if(event.key==='Enter') searchSpotifyPlaylists()">
+          <button class="btn btn-gold" onclick="searchSpotifyPlaylists()" id="btn-search-playlists">Search</button>
+        </div>
+      </div>
+
+      <div id="import-results" style="display:none">
+        <div class="field">
+          <label>Playlists found — select to import</label>
+          <div class="playlist-results-list" id="playlist-results-list"></div>
+        </div>
+
+        <div class="field">
+          <label>Add to folder</label>
+          <select id="import-folder-select" style="background:var(--parchment-mid);border:1px solid var(--border);border-radius:3px;padding:9px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;width:100%">
+            <option value="">— No folder (All Scenes) —</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Default Hue Scene for imported scenes</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="import-hue-scene-select" style="flex:1;background:var(--parchment-mid);border:1px solid var(--border);border-radius:3px;padding:9px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px">
+              <option value="">— No lights —</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="loadHueScenes()" title="Refresh">↻</button>
+          </div>
+          <div class="field-hint">You can change each scene's Hue scene individually after import.</div>
+        </div>
+      </div>
+
+      <div id="import-status" style="font-size:13px;color:var(--text-muted);font-style:italic"></div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('import-modal')">Cancel</button>
+      <button class="btn btn-gold" id="btn-import-confirm" onclick="confirmImport()" style="display:none">Import Selected</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════
+// STATE
+// ═══════════════════════════════════
+let scenes = [];
+let folders = [];
+let hueScenes = []; // cached list of Hue scenes from bridge
+let activeFolderId = null; // null = All Scenes
+let editingSceneId = null;
+let editingFolderId = null;
+let sceneMode = 'both';
+let activeScene = null;
+
+const CONFIG_KEY = 'dnd_config';
+const SCENES_KEY = 'dnd_scenes';
+const FOLDERS_KEY = 'dnd_folders';
+const PKCE_STATE_KEY = 'dnd_pkce_state';
+const PKCE_VERIFIER_KEY = 'dnd_pkce_verifier';
+const TOKEN_KEY = 'dnd_spotify_token';
+
+let config = {
+  spotifyClientId: '79fd5903488d4148919669952bd6a751',
+  hueIp: '',
+  hueUser: '',
+  baselineHueSceneId: '',
+  baselineHueSceneName: '',
+  transitionTime: 2
+};
+
+let spotifyToken = null;
+let spotifyTokenExpiry = 0;
+
+const COLOR_PRESETS = [
+  { name: 'Icy Blue',     hex: '#4a9eff' },
+  { name: 'Fire Red',     hex: '#ff4a1a' },
+  { name: 'Forest Green', hex: '#2db86b' },
+  { name: 'Royal Purple', hex: '#8b4fd8' },
+  { name: 'Warm Amber',   hex: '#ff9a2e' },
+  { name: 'Ghost White',  hex: '#c8d8ff' },
+  { name: 'Deep Crimson', hex: '#cc1a3a' },
+  { name: 'Ocean Teal',   hex: '#1ab8a0' },
+  { name: 'Dungeon Dark', hex: '#4a2080' },
+  { name: 'Sunlight',     hex: '#ffe066' },
+];
+
+// ═══════════════════════════════════
+// INIT
+// ═══════════════════════════════════
+window.addEventListener('load', async () => {
+  loadConfig();
+  loadScenes();
+  loadFolders();
+  renderSidebar();
+  renderScenes();
+  updateStatusBar();
+  populateSettingsForm();
+  if (config.hueIp && config.hueUser) loadHueScenes();
+
+  // Handle Spotify PKCE callback — code arrives as URL query param
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  const state = urlParams.get('state');
+  if (code && state) {
+    await handleSpotifyCallback(code, state);
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
+  // Restore token from storage if still valid
+  const stored = localStorage.getItem(TOKEN_KEY);
+  if (stored && !spotifyToken) {
+    try {
+      const t = JSON.parse(stored);
+      if (t.expiry > Date.now()) {
+        spotifyToken = t.access_token;
+        spotifyTokenExpiry = t.expiry;
+        updateStatusBar();
+        loadUserPlaylists();
+      } else {
+        await refreshSpotifyToken();
+      }
+    } catch(e) {}
+  }
+});
+
+// ═══════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════
+function loadConfig() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CONFIG_KEY));
+    if (saved) {
+      config.hueIp = saved.hueIp || '';
+      config.hueUser = saved.hueUser || '';
+      config.baselineHueSceneId = saved.baselineHueSceneId || '';
+      config.baselineHueSceneName = saved.baselineHueSceneName || '';
+      config.transitionTime = saved.transitionTime ?? 2;
+    }
+  } catch(e) {}
+}
+function saveConfig() {
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+}
+function loadScenes() {
+  try { scenes = JSON.parse(localStorage.getItem(SCENES_KEY)) || []; } catch(e) {}
+}
+function saveScenesStorage() {
+  localStorage.setItem(SCENES_KEY, JSON.stringify(scenes));
+}
+function loadFolders() {
+  try { folders = JSON.parse(localStorage.getItem(FOLDERS_KEY)) || []; } catch(e) {}
+}
+function saveFoldersStorage() {
+  localStorage.setItem(FOLDERS_KEY, JSON.stringify(folders));
+}
+
+// ═══════════════════════════════════
+// PAGE NAVIGATION
+// ═══════════════════════════════════
+function showPage(page) {
+  const mainPage = document.getElementById('main-page');
+  const settingsPage = document.getElementById('settings-page');
+  if (page === 'settings') {
+    mainPage.classList.add('hidden');
+    settingsPage.classList.add('active');
+    populateSettingsForm();
+  } else {
+    mainPage.classList.remove('hidden');
+    settingsPage.classList.remove('active');
+  }
+}
+
+// ═══════════════════════════════════
+// SCENE RENDERING
+// ═══════════════════════════════════
+function renderScenes() {
+  const grid = document.getElementById('scene-grid');
+  const filtered = activeFolderId
+    ? scenes.filter(s => s.folderId === activeFolderId)
+    : scenes;
+
+  // Update section title
+  const titleEl = document.getElementById('section-title');
+  if (titleEl) {
+    if (activeFolderId) {
+      const folder = folders.find(f => f.id === activeFolderId);
+      titleEl.textContent = folder ? folder.name : 'Scenes';
+    } else {
+      titleEl.textContent = 'All Scenes';
+    }
+  }
+
+  if (filtered.length === 0) {
+    const msg = activeFolderId
+      ? 'No scenes in this folder yet. Click <strong>+ New Scene</strong> to add one.'
+      : 'Click <strong>+ New Scene</strong> to conjure your first scene';
+    grid.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-rune">✦</div>
+        <h3>${activeFolderId ? 'Folder is Empty' : 'No Scenes Yet'}</h3>
+        <p>${msg}</p>
+      </div>`;
+    return;
+  }
+  grid.innerHTML = filtered.map(scene => sceneCardHTML(scene)).join('');
+}
+
+function renderSidebar() {
+  const list = document.getElementById('folder-list');
+  const countAll = document.getElementById('count-all');
+  if (countAll) countAll.textContent = scenes.length;
+
+  list.innerHTML = folders.map(folder => {
+    const count = scenes.filter(s => s.folderId === folder.id).length;
+    const isActive = activeFolderId === folder.id;
+    return `
+    <div class="sidebar-item ${isActive ? 'active' : ''}" onclick="selectFolder('${folder.id}')"
+         data-drag-folder="${folder.id}">
+      <span class="drag-handle" data-drag-folder-handle="${folder.id}" title="Drag to reorder" onclick="event.stopPropagation()">⠿</span>
+      <span class="folder-icon">📁</span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(folder.name)}</span>
+      <span class="scene-count">${count}</span>
+      <span class="sidebar-folder-actions">
+        <button class="folder-action-btn" onclick="event.stopPropagation();openEditFolder('${folder.id}')" title="Rename">✎</button>
+        <button class="folder-action-btn del" onclick="event.stopPropagation();deleteFolder('${folder.id}')" title="Delete">✕</button>
+      </span>
+    </div>`;
+  }).join('');
+
+  // Update "All Scenes" active state
+  const allItem = document.getElementById('sidebar-all');
+  if (allItem) allItem.classList.toggle('active', activeFolderId === null);
+
+  // Refresh folder dropdowns in modals
+  populateFolderSelects();
+}
+
+function selectFolder(folderId) {
+  activeFolderId = folderId;
+  renderSidebar();
+  renderScenes();
+}
+
+function populateFolderSelects() {
+  const options = '<option value="">— No folder —</option>' +
+    folders.map(f => `<option value="${f.id}">${escHtml(f.name)}</option>`).join('');
+  const importOptions = '<option value="">— No folder (All Scenes) —</option>' +
+    folders.map(f => `<option value="${f.id}">${escHtml(f.name)}</option>`).join('');
+
+  const sceneSelect = document.getElementById('scene-folder-select');
+  const importSelect = document.getElementById('import-folder-select');
+  if (sceneSelect) sceneSelect.innerHTML = options;
+  if (importSelect) importSelect.innerHTML = importOptions;
+}
+
+function sceneCardHTML(scene) {
+  const hasMusic = scene.spotifyUrl && scene.mode !== 'lights';
+  const hasLights = scene.mode !== 'music';
+  const metaItems = [];
+  if (hasLights && scene.hueSceneName) metaItems.push(`<span><span class="meta-icon">💡</span><span class="meta-text">${escHtml(scene.hueSceneName)}</span></span>`);
+  else if (hasLights && !scene.hueSceneName) metaItems.push(`<span><span class="meta-icon" style="opacity:0.35">💡</span><span class="meta-text" style="opacity:0.4">No Hue scene</span></span>`);
+  if (hasMusic && scene.spotifyUrl) metaItems.push(`<span><span class="meta-icon">🎵</span><span class="meta-text">Spotify linked</span></span>`);
+  const modeLabel = scene.mode === 'both' ? 'Lights + Music' : scene.mode === 'lights' ? 'Lights Only' : 'Music Only';
+  // Accent bar: gold if both, purple if lights, green if music
+  const accentColor = scene.mode === 'lights' ? '#5b3fa0' : scene.mode === 'music' ? '#1a8b4a' : '#7a6230';
+
+  return `
+  <div class="scene-card" id="card-${scene.id}">
+    <div class="scene-card-accent" style="background: linear-gradient(90deg, ${accentColor}cc, ${accentColor}22)"></div>
+    <div class="scene-card-body">
+      <div class="scene-name">${escHtml(scene.name)}</div>
+      <div class="scene-meta">
+        <span><span class="meta-icon" style="opacity:0.5;font-size:10px">${modeLabel}</span></span>
+        ${metaItems.join('')}
+      </div>
+      <div class="scene-actions">
+        <span class="drag-handle" data-drag-scene="${scene.id}" title="Drag to reorder">⠿</span>
+        <button class="btn-prev-next" id="btn-prev-${scene.id}" onclick="skipTrack('prev','${scene.id}')" title="Previous">⏮</button>
+        <button class="btn-trigger" onclick="triggerScene('${scene.id}')">
+          ✦ Enter Scene
+        </button>
+        <button class="btn-prev-next" id="btn-next-${scene.id}" onclick="skipTrack('next','${scene.id}')" title="Next">⏭</button>
+        <button class="btn-edit-scene" onclick="openEditScene('${scene.id}')" title="Edit">✎</button>
+        <button class="btn-delete-scene" onclick="deleteScene('${scene.id}')" title="Delete">✕</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════
+// SCENE MODAL
+// ═══════════════════════════════════
+function openAddScene() {
+  editingSceneId = null;
+  document.getElementById('scene-modal-title').textContent = 'New Scene';
+  document.getElementById('scene-name-input').value = '';
+  document.getElementById('scene-spotify-input').value = '';
+  setSceneMode('both');
+  populateFolderSelects();
+  updateHueSceneDropdowns();
+  const hSel = document.getElementById('scene-hue-scene-select');
+  if (hSel) hSel.value = '';
+  const tSlider = document.getElementById('scene-transition-input');
+  const tLbl = document.getElementById('scene-transition-label');
+  if (tSlider) tSlider.value = -1;
+  if (tLbl) tLbl.textContent = 'Use global';
+  // Pre-select active folder if one is selected
+  const sel = document.getElementById('scene-folder-select');
+  if (sel && activeFolderId) sel.value = activeFolderId;
+  openModal('scene-modal');
+}
+
+function openEditScene(id) {
+  const scene = scenes.find(s => s.id === id);
+  if (!scene) return;
+  editingSceneId = id;
+  document.getElementById('scene-modal-title').textContent = 'Edit Scene';
+  document.getElementById('scene-name-input').value = scene.name;
+  document.getElementById('scene-spotify-input').value = scene.spotifyUrl || '';
+  setSceneMode(scene.mode || 'both');
+  populateFolderSelects();
+  updateHueSceneDropdowns();
+  const hSel = document.getElementById('scene-hue-scene-select');
+  if (hSel) hSel.value = scene.hueSceneId || '';
+  const sel = document.getElementById('scene-folder-select');
+  if (sel) sel.value = scene.folderId || '';
+  const tSlider = document.getElementById('scene-transition-input');
+  const tLbl = document.getElementById('scene-transition-label');
+  const tVal = scene.transitionTime !== undefined ? scene.transitionTime : -1;
+  if (tSlider) tSlider.value = tVal;
+  if (tLbl) tLbl.textContent = tVal < 0 ? 'Use global' : tVal === 0 ? 'Instant' : tVal + 's';
+  openModal('scene-modal');
+}
+
+function saveScene() {
+  const name = document.getElementById('scene-name-input').value.trim();
+  const spotifyUrl = document.getElementById('scene-spotify-input').value.trim();
+
+  if (!name) { toast('Enter a scene name', 'error'); return; }
+
+  const folderId = document.getElementById('scene-folder-select')?.value || '';
+  const hueSceneId = document.getElementById('scene-hue-scene-select')?.value || '';
+  const hueSceneName = hueScenes.find(s => s.id === hueSceneId)?.name || '';
+
+  const tVal = parseFloat(document.getElementById('scene-transition-input')?.value ?? -1);
+  const transitionTime = tVal < 0 ? undefined : tVal;
+
+  if (editingSceneId) {
+    const idx = scenes.findIndex(s => s.id === editingSceneId);
+    if (idx !== -1) {
+      scenes[idx] = { ...scenes[idx], name, spotifyUrl, mode: sceneMode, folderId, hueSceneId, hueSceneName, transitionTime };
+    }
+    toast('Scene updated ✦');
+  } else {
+    scenes.push({ id: uid(), name, spotifyUrl, mode: sceneMode, folderId, hueSceneId, hueSceneName, transitionTime });
+    toast('Scene created ✦');
+  }
+  saveScenesStorage();
+  renderSidebar();
+  renderScenes();
+  populateQuickPlaylistSelect();
+  closeModal('scene-modal');
+}
+
+function deleteScene(id) {
+  if (activeScene && activeScene.id === id) {
+    activeScene = null;
+    isPaused = false;
+    document.getElementById('active-strip').classList.remove('visible');
+  }
+  scenes = scenes.filter(s => s.id !== id);
+  saveScenesStorage();
+  renderSidebar();
+  renderScenes();
+  populateQuickPlaylistSelect();
+  toast('Scene removed');
+}
+
+function setSceneMode(mode) {
+  sceneMode = mode;
+  ['both','lights','music'].forEach(m => {
+    document.getElementById(`mode-${m}`).classList.toggle('active', m === mode);
+  });
+}
+
+// ═══════════════════════════════════
+// TRIGGER SCENE
+// ═══════════════════════════════════
+async function triggerScene(id) {
+  const scene = scenes.find(s => s.id === id);
+  if (!scene) return;
+
+  // If this is already the active scene and we're paused/playing, just toggle pause
+  if (activeScene && activeScene.id === id) {
+    await togglePause();
+    return;
+  }
+
+  // Switching to a new scene — reset previous card if there was one
+  if (activeScene) {
+    const prevTrigger = document.querySelector(`#card-${activeScene.id} .btn-trigger`);
+    if (prevTrigger) { prevTrigger.textContent = '✦ Enter Scene'; prevTrigger.classList.remove('active-scene'); }
+    const prevP = document.getElementById(`btn-prev-${activeScene.id}`);
+    const prevN = document.getElementById(`btn-next-${activeScene.id}`);
+    if (prevP) prevP.classList.remove('visible');
+    if (prevN) prevN.classList.remove('visible');
+    // Restore edit and delete buttons
+    const prevEdit = document.querySelector(`#card-${activeScene.id} .btn-edit-scene`);
+    const prevDel = document.querySelector(`#card-${activeScene.id} .btn-delete-scene`);
+    if (prevEdit) prevEdit.style.display = '';
+    if (prevDel) prevDel.style.display = '';
+  }
+
+  activeScene = scene;
+
+  // Visual feedback — entering
+  const btn = document.querySelector(`#card-${id} .btn-trigger`);
+  if (btn) {
+    btn.classList.add('firing');
+    btn.textContent = '✦ Entering...';
+  }
+
+  
+  document.getElementById('active-strip').classList.add('visible');
+  document.getElementById('active-scene-label').textContent = scene.name;
+  startPolling();
+  // Reset pause state for new scene
+  isPaused = false;
+  const pauseBtn = document.getElementById('btn-pause');
+  if (pauseBtn) { pauseBtn.textContent = '⏸ Pause'; pauseBtn.classList.remove('paused'); }
+  // Reset quick play button since scene is now controlling music
+  isQuickPlaying = false;
+  const qBtn = document.getElementById('btn-quick-play');
+  if (qBtn) { qBtn.classList.remove('paused'); }
+
+  const mode = scene.mode || 'both';
+
+  let lightsDone = false;
+  let musicDone = false;
+
+  if ((mode === 'both' || mode === 'lights') && config.hueIp && config.hueUser && scene.hueSceneId) {
+    const transOverride = (scene.transitionTime !== undefined && scene.transitionTime >= 0) ? scene.transitionTime : undefined;
+    lightsDone = await activateHueScene(scene.hueSceneId, transOverride);
+  } else if ((mode === 'both' || mode === 'lights') && config.hueIp && config.hueUser && !scene.hueSceneId) {
+    lightsDone = false; // no Hue scene assigned
+  }
+
+  if ((mode === 'both' || mode === 'music') && scene.spotifyUrl) {
+    musicDone = await playSpotifyPlaylist(scene.spotifyUrl);
+  }
+
+  const msgs = [];
+  if (mode === 'both' || mode === 'lights') msgs.push(lightsDone ? '💡 Lights set' : '💡 Lights: check Hue settings');
+  if (mode === 'both' || mode === 'music') msgs.push(musicDone ? '🎵 Music started' : '🎵 Open Spotify on your device');
+  toast(msgs.join('  ·  '), lightsDone || musicDone ? 'success' : '');
+
+  // Update button to show active state + show prev/next
+  const doneBtn = document.querySelector(`#card-${id} .btn-trigger`);
+  if (doneBtn) {
+    doneBtn.classList.remove('firing');
+    doneBtn.classList.add('active-scene');
+    doneBtn.textContent = '⏸ Pause Scene';
+  }
+  const hasMusic = scene.spotifyUrl && (scene.mode === 'both' || scene.mode === 'music');
+  const prevBtn = document.getElementById(`btn-prev-${id}`);
+  const nextBtn = document.getElementById(`btn-next-${id}`);
+  if (prevBtn) prevBtn.classList.toggle('visible', !!hasMusic);
+  if (nextBtn) nextBtn.classList.toggle('visible', !!hasMusic);
+  // Hide edit and delete while scene is active
+  const editBtn = document.querySelector(`#card-${id} .btn-edit-scene`);
+  const delBtn = document.querySelector(`#card-${id} .btn-delete-scene`);
+  if (editBtn) editBtn.style.display = 'none';
+  if (delBtn) delBtn.style.display = 'none';
+}
+
+// triggerLightsOnly and triggerMusicOnly replaced by quick controls bar
+
+let isPaused = false;
+let isQuickPlaying = false;
+
+async function togglePause() {
+  if (!spotifyToken) { toast('Spotify not connected', 'error'); return; }
+  // Allow toggling pause even if no scene card is active (quick play mode)
+
+  if (spotifyTokenExpiry < Date.now()) await refreshSpotifyToken();
+
+  const endpoint = isPaused
+    ? 'https://api.spotify.com/v1/me/player/play'
+    : 'https://api.spotify.com/v1/me/player/pause';
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${spotifyToken}` }
+    });
+
+    if (res.status === 204 || res.status === 200) {
+      isPaused = !isPaused;
+      // Update sidebar pause button
+      const btn = document.getElementById('btn-pause');
+      if (btn) { btn.textContent = isPaused ? '▶ Resume' : '⏸ Pause'; btn.classList.toggle('paused', isPaused); }
+      // Update card trigger button
+      if (activeScene) {
+        const cardBtn = document.querySelector(`#card-${activeScene.id} .btn-trigger`);
+        if (cardBtn) {
+          cardBtn.classList.toggle('active-scene', !isPaused);
+          cardBtn.textContent = isPaused ? '▶ Resume Scene' : '⏸ Pause Scene';
+        }
+      }
+      toast(isPaused ? '⏸ Music paused' : '▶ Music resumed');
+    } else {
+      toast('Could not reach Spotify player', 'error');
+    }
+  } catch(e) {
+    toast('Spotify error', 'error');
+  }
+}
+
+// ═══════════════════════════════════
+// RESET TO BASELINE
+// ═══════════════════════════════════
+async function resetToBaseline() {
+  const btn = document.getElementById('btn-reset');
+  if (btn) { btn.textContent = '⟳ Resetting...'; btn.disabled = true; }
+
+  let lightsDone = false;
+  let musicDone = false;
+
+  // Activate baseline Hue scene
+  if (config.hueIp && config.hueUser && config.baselineHueSceneId) {
+    lightsDone = await activateHueScene(config.baselineHueSceneId);
+  }
+
+  // Pause Spotify
+  if (spotifyToken && spotifyTokenExpiry > Date.now()) {
+    try {
+      const res = await fetch('https://api.spotify.com/v1/me/player/pause', {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${spotifyToken}` }
+      });
+      musicDone = res.status === 204 || res.status === 200;
+    } catch(e) {}
+  }
+
+  // Reset quick play button
+  isQuickPlaying = false;
+  const qBtn = document.getElementById('btn-quick-play');
+  if (qBtn) { qBtn.classList.remove('paused'); }
+
+  // Reset all card buttons back to Enter Scene, hide prev/next, restore edit/delete
+  scenes.forEach(s => {
+    const cardBtn = document.querySelector(`#card-${s.id} .btn-trigger`);
+    if (cardBtn) { cardBtn.textContent = '✦ Enter Scene'; cardBtn.classList.remove('active-scene', 'firing'); }
+    const p = document.getElementById(`btn-prev-${s.id}`);
+    const n = document.getElementById(`btn-next-${s.id}`);
+    if (p) p.classList.remove('visible');
+    if (n) n.classList.remove('visible');
+    const editBtn = document.querySelector(`#card-${s.id} .btn-edit-scene`);
+    const delBtn = document.querySelector(`#card-${s.id} .btn-delete-scene`);
+    if (editBtn) editBtn.style.display = '';
+    if (delBtn) delBtn.style.display = '';
+  });
+
+  // Reset active scene state
+  activeScene = null;
+  isPaused = false;
+  document.getElementById('active-strip').classList.remove('visible');
+  stopPolling();
+  
+  const pauseBtn = document.getElementById('btn-pause');
+  if (pauseBtn) { pauseBtn.textContent = '⏸ Pause'; pauseBtn.classList.remove('paused'); }
+
+  if (btn) { btn.textContent = '⟳ Reset'; btn.disabled = false; }
+
+  const msgs = [];
+  if (config.baselineHueSceneId) msgs.push(lightsDone ? '💡 Lights reset' : '💡 Could not reach Hue');
+  msgs.push(musicDone ? '🎵 Music paused' : '🎵 Open Spotify to pause');
+  toast(msgs.join('  ·  '), 'success');
+}
+
+// ═══════════════════════════════════
+// HUE LIGHTS
+// ═══════════════════════════════════
+// ─── Load all Hue scenes from bridge and populate dropdowns ───
+async function loadHueScenes() {
+  const ip = config.hueIp;
+  const user = config.hueUser;
+  if (!ip || !user) {
+    updateHueSceneDropdowns();
+    return false;
+  }
+  try {
+    const res = await fetch(`http://${ip}/api/${user}/scenes`).catch(() => null);
+    if (!res || !res.ok) { updateHueSceneDropdowns(); return false; }
+    const data = await res.json();
+    // Each scene has an id (key), name, and group (room/zone id)
+    hueScenes = Object.entries(data)
+      .filter(([, s]) => s.type === 'GroupScene' || s.type === 'LightScene')
+      .map(([id, s]) => ({ id, name: s.name, group: s.group || null }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    updateHueSceneDropdowns();
+    return true;
+  } catch(e) {
+    updateHueSceneDropdowns();
+    return false;
+  }
+}
+
+function updateHueSceneDropdowns() {
+  const hueConfigured = config.hueIp && config.hueUser;
+  const hint = document.getElementById('hue-scene-hint');
+
+  const options = hueScenes.length > 0
+    ? '<option value="">— No lights —</option>' + hueScenes.map(s =>
+        `<option value="${s.id}">${escHtml(s.name)}</option>`
+      ).join('')
+    : hueConfigured
+      ? '<option value="">No scenes found — click ↻ Refresh</option>'
+      : '<option value="">— Connect Hue Bridge in Settings first —</option>';
+
+  ['scene-hue-scene-select', 'import-hue-scene-select'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = options;
+  });
+  populateQuickHueSelect();
+
+  // Populate baseline dropdown (no "no lights" option — must pick something)
+  const baselineSel = document.getElementById('cfg-baseline-hue-scene');
+  if (baselineSel) {
+    baselineSel.innerHTML = '<option value="">— None —</option>' +
+      hueScenes.map(s => `<option value="${s.id}">${escHtml(s.name)}</option>`).join('');
+    if (config.baselineHueSceneId) baselineSel.value = config.baselineHueSceneId;
+  }
+
+  if (hint) {
+    hint.textContent = hueScenes.length > 0
+      ? `${hueScenes.length} Hue scenes loaded.`
+      : hueConfigured
+        ? 'Click ↻ Refresh to load your Hue scenes.'
+        : 'Connect your Hue Bridge in Settings to see your scenes here.';
+  }
+}
+
+// ─── Activate a Hue scene across all rooms ───
+async function activateHueScene(hueSceneId, transitionSecs) {
+  const ip = config.hueIp;
+  const user = config.hueUser;
+  if (!ip || !user || !hueSceneId) return false;
+
+  // Hue transitiontime is in units of 100ms; use scene override or global default
+  const secs = transitionSecs !== undefined ? transitionSecs : (config.transitionTime ?? 2);
+  const transitiontime = Math.round(secs * 10); // convert seconds → hue units
+
+  try {
+    const res = await fetch(`http://${ip}/api/${user}/groups`).catch(() => null);
+    if (!res || !res.ok) return false;
+    const groups = await res.json();
+
+    const body = { scene: hueSceneId };
+    if (transitiontime > 0) body.transitiontime = transitiontime;
+
+    const updates = Object.keys(groups).map(groupId =>
+      fetch(`http://${ip}/api/${user}/groups/${groupId}/action`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }).catch(() => null)
+    );
+    await Promise.all(updates);
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+async function registerHue() {
+  const ip = document.getElementById('cfg-hue-ip').value.trim();
+  if (!ip) { toast('Enter the Bridge IP first', 'error'); return; }
+
+  toast('Press the button on your Bridge now, then wait...');
+  
+  // Wait a moment then try to register
+  await sleep(1000);
+  
+  try {
+    const res = await fetch(`https://${ip}/api`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ devicetype: 'dnd_scene_controller#tablet' })
+    });
+    const data = await res.json();
+    
+    if (data[0]?.success?.username) {
+      const username = data[0].success.username;
+      document.getElementById('cfg-hue-user').value = username;
+      config.hueIp = ip;
+      config.hueUser = username;
+      saveConfig();
+      updateStatusBar();
+      toast('✦ Hue Bridge registered!', 'success');
+      document.getElementById('no-hue-warning').classList.remove('visible');
+      loadHueScenes();
+    } else if (data[0]?.error?.type === 101) {
+      toast('Button not pressed — press the Bridge button first!', 'error');
+    } else {
+      toast('Registration failed. Check IP and try again.', 'error');
+      document.getElementById('no-hue-warning').classList.add('visible');
+    }
+  } catch(e) {
+    toast('Cannot reach Bridge. Check IP address.', 'error');
+    document.getElementById('no-hue-warning').classList.add('visible');
+  }
+}
+
+async function testHue() {
+  const ip = document.getElementById('cfg-hue-ip').value.trim();
+  const user = document.getElementById('cfg-hue-user').value.trim();
+  if (!ip || !user) { toast('Enter IP and username first', 'error'); return; }
+  try {
+    const res = await fetch(`https://${ip}/api/${user}/lights`);
+    const data = await res.json();
+    const count = Object.keys(data).length;
+    toast(`✦ Connected! Found ${count} light${count!==1?'s':''}`, 'success');
+    document.getElementById('no-hue-warning').classList.remove('visible');
+  } catch(e) {
+    toast('Cannot reach Bridge', 'error');
+    document.getElementById('no-hue-warning').classList.add('visible');
+  }
+}
+
+function saveHueManual() {
+  config.hueIp = document.getElementById('cfg-hue-ip').value.trim();
+  config.hueUser = document.getElementById('cfg-hue-user').value.trim();
+  saveConfig();
+  updateStatusBar();
+  loadHueScenes();
+  toast('Hue settings saved');
+}
+
+// ═══════════════════════════════════
+// SPOTIFY AUTH (PKCE)
+// ═══════════════════════════════════
+function connectSpotify() {
+  initiateSpotifyAuth();
+}
+
+async function initiateSpotifyAuth() {
+  const clientId = config.spotifyClientId;
+  if (!clientId) { toast('Set your Spotify Client ID in Settings first', 'error'); return; }
+
+  const verifier = generateCodeVerifier();
+  const challenge = await generateCodeChallenge(verifier);
+  const state = generateState();
+
+  localStorage.setItem(PKCE_VERIFIER_KEY, verifier);
+  localStorage.setItem(PKCE_STATE_KEY, state);
+
+  const REDIRECT_URI = 'https://danmay321.github.io/dnd-scene-controller/DnD_Scene_Controller.html';
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    response_type: 'code',
+    redirect_uri: REDIRECT_URI,
+    state,
+    scope: 'user-read-playback-state user-modify-playback-state playlist-read-private',
+    code_challenge_method: 'S256',
+    code_challenge: challenge,
+  });
+
+  window.location = 'https://accounts.spotify.com/authorize?' + params;
+}
+
+async function handleSpotifyCallback(code, returnedState) {
+  const savedState = localStorage.getItem(PKCE_STATE_KEY);
+  const verifier = localStorage.getItem(PKCE_VERIFIER_KEY);
+
+  if (returnedState !== savedState) {
+    toast('Spotify auth failed: state mismatch', 'error');
+    return;
+  }
+
+  const REDIRECT_URI = 'https://danmay321.github.io/dnd-scene-controller/DnD_Scene_Controller.html';
+
+  try {
+    const res = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: REDIRECT_URI,
+        client_id: config.spotifyClientId,
+        code_verifier: verifier,
+      })
+    });
+
+    const data = await res.json();
+    if (data.access_token) {
+      spotifyToken = data.access_token;
+      spotifyTokenExpiry = Date.now() + (data.expires_in * 1000);
+      localStorage.setItem(TOKEN_KEY, JSON.stringify({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expiry: spotifyTokenExpiry
+      }));
+      updateStatusBar();
+      loadUserPlaylists();
+      toast('✦ Spotify connected!', 'success');
+    } else {
+      toast('Spotify auth failed. Try again.', 'error');
+    }
+  } catch(e) {
+    toast('Spotify auth error', 'error');
+  }
+}
+
+async function refreshSpotifyToken() {
+  const stored = localStorage.getItem(TOKEN_KEY);
+  if (!stored) return;
+  try {
+    const t = JSON.parse(stored);
+    if (!t.refresh_token) return;
+    const REDIRECT_URI = 'https://danmay321.github.io/dnd-scene-controller/DnD_Scene_Controller.html';
+    const res = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: t.refresh_token,
+        client_id: config.spotifyClientId,
+        redirect_uri: REDIRECT_URI,
+      })
+    });
+    const data = await res.json();
+    if (data.access_token) {
+      spotifyToken = data.access_token;
+      spotifyTokenExpiry = Date.now() + (data.expires_in * 1000);
+      localStorage.setItem(TOKEN_KEY, JSON.stringify({
+        ...t,
+        access_token: data.access_token,
+        expiry: spotifyTokenExpiry
+      }));
+      updateStatusBar();
+    }
+  } catch(e) {}
+}
+
+function disconnectSpotify() {
+  spotifyToken = null;
+  spotifyTokenExpiry = 0;
+  localStorage.removeItem(TOKEN_KEY);
+  updateStatusBar();
+  toast('Spotify disconnected');
+}
+
+async function playSpotifyPlaylist(url) {
+  // Extract playlist URI from URL
+  const match = url.match(/playlist\/([a-zA-Z0-9]+)/);
+  if (!match) {
+    // Just open in browser as fallback
+    window.open(url, '_blank');
+    return true;
+  }
+  const playlistId = match[1];
+  const contextUri = `spotify:playlist:${playlistId}`;
+
+  if (!spotifyToken || spotifyTokenExpiry < Date.now()) {
+    await refreshSpotifyToken();
+  }
+
+  if (!spotifyToken) {
+    // Fallback: open Spotify
+    window.open(url, '_blank');
+    return true;
+  }
+
+  try {
+    // Get active device
+    const devRes = await fetch('https://api.spotify.com/v1/me/player/devices', {
+      headers: { Authorization: `Bearer ${spotifyToken}` }
+    });
+    const devData = await devRes.json();
+    const device = devData.devices?.find(d => d.is_active) || devData.devices?.[0];
+    const deviceId = device?.id;
+
+    // Fetch playlist tracks to pick a random starting position
+    const tracksRes = await fetch(
+      `https://api.spotify.com/v1/playlists/${playlistId}/tracks?fields=total&limit=1`,
+      { headers: { Authorization: `Bearer ${spotifyToken}` } }
+    ).catch(() => null);
+    const tracksData = tracksRes ? await tracksRes.json().catch(() => null) : null;
+    const total = tracksData?.total || 1;
+    const randomOffset = Math.floor(Math.random() * total);
+
+    // Start playlist at the random offset
+    const body = { context_uri: contextUri, offset: { position: randomOffset }, position_ms: 0 };
+    const playRes = await fetch(
+      `https://api.spotify.com/v1/me/player/play${deviceId ? `?device_id=${deviceId}` : ''}`,
+      {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${spotifyToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }
+    );
+
+    if (playRes.status === 404 || playRes.status === 403) {
+      window.open(url, '_blank');
+      return true;
+    }
+
+    // Enable shuffle then immediately skip — lands on a random track with no audible pause
+    await fetch(
+      `https://api.spotify.com/v1/me/player/shuffle?state=true${deviceId ? `&device_id=${deviceId}` : ''}`,
+      { method: 'PUT', headers: { Authorization: `Bearer ${spotifyToken}` } }
+    ).catch(() => null);
+
+    await fetch('https://api.spotify.com/v1/me/player/next', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${spotifyToken}` }
+    }).catch(() => null);
+
+    if (playRes.status === 204 || playRes.status === 200) return true;
+    return false;
+  } catch(e) {
+    window.open(url, '_blank');
+    return true;
+  }
+}
+
+// ═══════════════════════════════════
+// QUICK CONTROLS
+// ═══════════════════════════════════
+let userPlaylists = []; // cached Spotify playlists
+
+async function loadUserPlaylists() {
+  if (!spotifyToken || spotifyTokenExpiry < Date.now()) return;
+  try {
+    const res = await fetch('https://api.spotify.com/v1/me/playlists?limit=50', {
+      headers: { Authorization: `Bearer ${spotifyToken}` }
+    });
+    const data = await res.json();
+    userPlaylists = data.items || [];
+    populateQuickPlaylistSelect();
+  } catch(e) {}
+}
+
+let selectedPlaylistUrl = '';
+let selectedPlaylistName = '';
+let activeTabFolderId = null;
+
+function populateQuickPlaylistSelect() {
+  const tabContainer = document.getElementById('qc-folder-tabs');
+  if (!tabContainer) return;
+
+  const scenesWithMusic = scenes.filter(s => s.spotifyUrl && s.mode !== 'lights');
+
+  // Build folder tabs
+  const tabFolders = folders.filter(f => scenesWithMusic.some(s => s.folderId === f.id));
+  const hasUncategorized = scenesWithMusic.some(s => !s.folderId);
+
+  if (tabFolders.length === 0 && !hasUncategorized) {
+    tabContainer.innerHTML = '<span style="font-size:12px;color:var(--text-muted);font-style:italic">No scenes with playlists yet</span>';
+    return;
+  }
+
+  let tabHtml = '';
+  tabFolders.forEach(f => {
+    const active = activeTabFolderId === f.id ? 'active' : '';
+    tabHtml += `<button class="qc-folder-tab ${active}" onclick="selectMusicFolder('${f.id}')">${escHtml(f.name)}</button>`;
+  });
+  if (hasUncategorized) {
+    const active = activeTabFolderId === '__uncategorized__' ? 'active' : '';
+    tabHtml += `<button class="qc-folder-tab ${active}" onclick="selectMusicFolder('__uncategorized__')">Uncategorized</button>`;
+  }
+  tabContainer.innerHTML = tabHtml;
+
+  // Re-render playlist panel if a tab is active
+  if (activeTabFolderId) renderPlaylistPanel(activeTabFolderId);
+}
+
+function selectMusicFolder(folderId) {
+  activeTabFolderId = folderId;
+  // Update tab active state
+  document.querySelectorAll('.qc-folder-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  renderPlaylistPanel(folderId);
+}
+
+function renderPlaylistPanel(folderId) {
+  const panel = document.getElementById('qc-playlist-panel');
+  if (!panel) return;
+
+  const scenesWithMusic = scenes.filter(s => s.spotifyUrl && s.mode !== 'lights');
+  const inFolder = folderId === '__uncategorized__'
+    ? scenesWithMusic.filter(s => !s.folderId)
+    : scenesWithMusic.filter(s => s.folderId === folderId);
+
+  panel.innerHTML = inFolder.map(s => {
+    const selected = selectedPlaylistUrl === s.spotifyUrl ? 'selected' : '';
+    return `<button class="qc-playlist-btn ${selected}" onclick="selectPlaylist('${escHtml(s.spotifyUrl)}', '${escHtml(s.name)}', this)">${escHtml(s.name)}</button>`;
+  }).join('');
+  panel.classList.add('visible');
+}
+
+function selectPlaylist(url, name, el) {
+  selectedPlaylistUrl = url;
+  selectedPlaylistName = name;
+  document.querySelectorAll('.qc-playlist-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// Keep for compat — no-op now
+function onMusicFolderChange() {}
+
+function populateQuickHueSelect() {
+  const sel = document.getElementById('quick-hue-select');
+  if (!sel) return;
+  if (hueScenes.length === 0) {
+    sel.innerHTML = '<option value="">— Connect Hue Bridge first —</option>';
+    return;
+  }
+
+  // Group by Hue scene name prefix (everything before " - " or first word group)
+  // Hue scenes are named like "Living Room - Relax", group by the room part
+  // Fall back to a flat list if no grouping pattern found
+  const grouped = {};
+  hueScenes.forEach(s => {
+    // Try to split on " - " to get room name
+    const parts = s.name.split(' - ');
+    const group = parts.length > 1 ? parts[0].trim() : 'Scenes';
+    if (!grouped[group]) grouped[group] = [];
+    grouped[group].push(s);
+  });
+
+  const groupKeys = Object.keys(grouped).sort();
+  let html = '<option value="">— Select scene —</option>';
+
+  if (groupKeys.length === 1) {
+    // No meaningful grouping — flat list
+    hueScenes.forEach(s => {
+      html += `<option value="${s.id}">${escHtml(s.name)}</option>`;
+    });
+  } else {
+    groupKeys.forEach(group => {
+      html += `<optgroup label="${escHtml(group)}">`;
+      grouped[group].forEach(s => {
+        const label = s.name.includes(' - ') ? s.name.split(' - ').slice(1).join(' - ').trim() : s.name;
+        html += `<option value="${s.id}">${escHtml(label)}</option>`;
+      });
+      html += '</optgroup>';
+    });
+  }
+
+  sel.innerHTML = html;
+}
+
+async function quickActivate() {
+  const url = selectedPlaylistUrl;
+  const hueSceneId = document.getElementById('quick-hue-select')?.value;
+
+  if (!url && !hueSceneId) {
+    toast('Select a playlist or Hue scene first', 'error');
+    return;
+  }
+
+  // Reset any active scene card back to Enter Scene
+  if (activeScene) {
+    const prevTrigger = document.querySelector(`#card-${activeScene.id} .btn-trigger`);
+    if (prevTrigger) { prevTrigger.textContent = '✦ Enter Scene'; prevTrigger.classList.remove('active-scene'); }
+    const prevP = document.getElementById(`btn-prev-${activeScene.id}`);
+    const prevN = document.getElementById(`btn-next-${activeScene.id}`);
+    if (prevP) prevP.classList.remove('visible');
+    if (prevN) prevN.classList.remove('visible');
+    activeScene = null;
+  }
+  // Reset pause state
+  isPaused = false;
+  const pauseBtn = document.getElementById('btn-pause');
+  if (pauseBtn) { pauseBtn.textContent = '⏸ Pause'; pauseBtn.classList.remove('paused'); }
+
+  const msgs = [];
+  let anyOk = false;
+
+  // Start music if selected
+  if (url) {
+    const ok = await playSpotifyPlaylist(url);
+    if (ok) {
+      isQuickPlaying = true;
+      const stopBtn = document.getElementById('btn-quick-play');
+      if (stopBtn) { stopBtn.classList.add('paused'); }
+      msgs.push('🎵 Music started');
+      anyOk = true;
+    } else {
+      msgs.push('🎵 Could not start music');
+    }
+  }
+
+  // Set lights if selected
+  if (hueSceneId) {
+    if (!config.hueIp || !config.hueUser) {
+      msgs.push('💡 Hue not configured');
+    } else {
+      const ok = await activateHueScene(hueSceneId);
+      msgs.push(ok ? '💡 Lights set' : '💡 Could not reach Hue');
+      if (ok) anyOk = true;
+    }
+  }
+
+  // Show active strip with the playlist name if music was started
+  if (url && anyOk) {
+    const label = selectedPlaylistName || 'Quick Play';
+    document.getElementById('active-scene-label').textContent = label;
+    document.getElementById('active-strip').classList.add('visible');
+    startPolling();
+  }
+
+  toast(msgs.join('  ·  '), anyOk ? 'success' : 'error');
+}
+
+async function quickStopMusic() {
+  if (!spotifyToken) return;
+  if (spotifyTokenExpiry < Date.now()) await refreshSpotifyToken();
+  try {
+    await fetch('https://api.spotify.com/v1/me/player/pause', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${spotifyToken}` }
+    });
+    isQuickPlaying = false;
+    selectedPlaylistUrl = '';
+    selectedPlaylistName = '';
+    document.querySelectorAll('.qc-playlist-btn').forEach(b => b.classList.remove('selected'));
+    const stopBtn = document.getElementById('btn-quick-play');
+    if (stopBtn) stopBtn.classList.remove('paused');
+    // Hide active strip if it was from quick play (no activeScene)
+    if (!activeScene) {
+      document.getElementById('active-strip').classList.remove('visible');
+      stopPolling();
+      isPaused = false;
+      const pauseBtn = document.getElementById('btn-pause');
+      if (pauseBtn) { pauseBtn.textContent = '⏸ Pause'; pauseBtn.classList.remove('paused'); }
+    }
+    toast('⏹ Music stopped');
+  } catch(e) {
+    toast('Could not stop music', 'error');
+  }
+}
+
+// ═══════════════════════════════════
+// SKIP TRACK
+// ═══════════════════════════════════
+async function skipTrack(direction, sceneId) {
+  if (!spotifyToken) { toast('Spotify not connected', 'error'); return; }
+  if (spotifyTokenExpiry < Date.now()) await refreshSpotifyToken();
+
+  const endpoint = direction === 'next'
+    ? 'https://api.spotify.com/v1/me/player/next'
+    : 'https://api.spotify.com/v1/me/player/previous';
+
+  try {
+    await fetch(endpoint, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${spotifyToken}` }
+    });
+  } catch(e) {
+    toast('Could not skip track', 'error');
+  }
+}
+
+// ═══════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════
+function populateSettingsForm() {
+  document.getElementById('cfg-hue-ip').value = config.hueIp || '';
+  document.getElementById('cfg-hue-user').value = config.hueUser || '';
+  const tSlider = document.getElementById('cfg-transition-time');
+  const tLabel = document.getElementById('cfg-transition-label');
+  if (tSlider) tSlider.value = config.transitionTime ?? 2;
+  if (tLabel) tLabel.textContent = config.transitionTime === 0 ? 'Instant' : (config.transitionTime ?? 2) + 's';
+  updateHueSceneDropdowns();
+  updateSpotifyAuthBadge();
+}
+
+function updateSpotifyAuthBadge() {
+  const badge = document.getElementById('spotify-auth-badge');
+  if (!badge) return;
+  const connected = spotifyToken && spotifyTokenExpiry > Date.now();
+  badge.className = `auth-badge ${connected ? 'ok' : 'not-ok'}`;
+  badge.innerHTML = connected
+    ? `<span class="status-dot connected"></span> Connected`
+    : `<span class="status-dot disconnected"></span> Not connected`;
+}
+
+function saveAllSettings() {
+  config.hueIp = document.getElementById('cfg-hue-ip').value.trim();
+  config.hueUser = document.getElementById('cfg-hue-user').value.trim();
+  const baselineSel = document.getElementById('cfg-baseline-hue-scene');
+  config.baselineHueSceneId = baselineSel?.value || '';
+  config.baselineHueSceneName = hueScenes.find(s => s.id === config.baselineHueSceneId)?.name || '';
+  config.transitionTime = parseFloat(document.getElementById('cfg-transition-time')?.value ?? 2);
+  saveConfig();
+  updateStatusBar();
+  toast('Settings saved ✦', 'success');
+  showPage('main');
+}
+
+function updateStatusBar() {
+  const spotifyConnected = spotifyToken && spotifyTokenExpiry > Date.now();
+  const hueConfigured = config.hueIp && config.hueUser;
+
+  document.getElementById('spotify-dot').className = `status-dot ${spotifyConnected ? 'connected' : 'disconnected'}`;
+  document.getElementById('spotify-status').textContent = spotifyConnected ? 'Spotify: Connected' : 'Spotify: Not connected';
+  const connectBtn = document.getElementById('spotify-connect-btn');
+  if (connectBtn) connectBtn.style.display = spotifyConnected ? 'none' : 'inline-block';
+
+  document.getElementById('hue-dot').className = `status-dot ${hueConfigured ? 'connected' : 'disconnected'}`;
+  document.getElementById('hue-status').textContent = hueConfigured ? `Hue: ${config.hueIp}` : 'Hue: Not configured';
+
+  updateSpotifyAuthBadge();
+}
+
+// ═══════════════════════════════════
+// MODAL HELPERS
+// ═══════════════════════════════════
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// Click outside to close
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.classList.remove('open');
+  }
+});
+
+// ═══════════════════════════════════
+// FOLDER CRUD
+// ═══════════════════════════════════
+function openAddFolder() {
+  editingFolderId = null;
+  document.getElementById('folder-modal-title').textContent = 'New Folder';
+  document.getElementById('folder-name-input').value = '';
+  openModal('folder-modal');
+}
+
+function openEditFolder(id) {
+  editingFolderId = id;
+  const folder = folders.find(f => f.id === id);
+  if (!folder) return;
+  document.getElementById('folder-modal-title').textContent = 'Rename Folder';
+  document.getElementById('folder-name-input').value = folder.name;
+  openModal('folder-modal');
+}
+
+function saveFolder() {
+  const name = document.getElementById('folder-name-input').value.trim();
+  if (!name) { toast('Enter a folder name', 'error'); return; }
+
+  if (editingFolderId) {
+    const idx = folders.findIndex(f => f.id === editingFolderId);
+    if (idx !== -1) folders[idx].name = name;
+    toast('Folder renamed');
+  } else {
+    folders.push({ id: uid(), name });
+    toast('Folder created ✦');
+  }
+  saveFoldersStorage();
+  renderSidebar();
+  populateQuickPlaylistSelect();
+  closeModal('folder-modal');
+}
+
+function deleteFolder(id) {
+  if (!confirm('Delete this folder? Scenes inside will move to All Scenes.')) return;
+  folders = folders.filter(f => f.id !== id);
+  // Unassign scenes from deleted folder
+  scenes = scenes.map(s => s.folderId === id ? { ...s, folderId: '' } : s);
+  saveFoldersStorage();
+  saveScenesStorage();
+  if (activeFolderId === id) activeFolderId = null;
+  renderSidebar();
+  renderScenes();
+  toast('Folder deleted');
+}
+
+// ═══════════════════════════════════
+// SPOTIFY IMPORT
+// ═══════════════════════════════════
+let importResults = [];
+
+function openImportModal() {
+  if (!spotifyToken || spotifyTokenExpiry < Date.now()) {
+    toast('Connect Spotify first in Settings', 'error');
+    return;
+  }
+  document.getElementById('import-search-input').value = '';
+  document.getElementById('import-results').style.display = 'none';
+  document.getElementById('import-status').textContent = '';
+  document.getElementById('btn-import-confirm').style.display = 'none';
+  populateFolderSelects();
+  buildImportColorPresets();
+  openModal('import-modal');
+}
+
+function buildImportColorPresets() {
+  const container = document.getElementById('import-color-presets');
+  if (!container) return;
+  container.innerHTML = COLOR_PRESETS.map(c => `
+    <div class="color-preset" title="${c.name}" style="background:${c.hex}"
+      onclick="pickImportColor('${c.hex}', this)"></div>
+  `).join('');
+}
+
+function pickImportColor(hex, el) {
+  document.getElementById('import-color-input').value = hex;
+  document.querySelectorAll('#import-color-presets .color-preset').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+async function searchSpotifyPlaylists() {
+  const query = document.getElementById('import-search-input').value.trim();
+  if (!query) { toast('Enter a search term', 'error'); return; }
+
+  const btn = document.getElementById('btn-search-playlists');
+  btn.textContent = 'Searching...';
+  btn.disabled = true;
+  document.getElementById('import-status').textContent = '';
+
+  if (spotifyTokenExpiry < Date.now()) await refreshSpotifyToken();
+
+  try {
+    const res = await fetch(
+      `https://api.spotify.com/v1/me/playlists?limit=50`,
+      { headers: { Authorization: `Bearer ${spotifyToken}` } }
+    );
+    const data = await res.json();
+    const all = data.items || [];
+
+    // Filter by keyword
+    const lq = query.toLowerCase();
+    importResults = all.filter(p =>
+      p.name.toLowerCase().includes(lq) ||
+      (p.description || '').toLowerCase().includes(lq)
+    );
+
+    if (importResults.length === 0) {
+      document.getElementById('import-status').textContent = 'No playlists matched that search. Try a different keyword.';
+      document.getElementById('import-results').style.display = 'none';
+      document.getElementById('btn-import-confirm').style.display = 'none';
+    } else {
+      renderImportResults();
+      document.getElementById('import-results').style.display = 'block';
+      document.getElementById('btn-import-confirm').style.display = 'inline-block';
+    }
+  } catch(e) {
+    toast('Could not fetch playlists. Check Spotify connection.', 'error');
+  }
+
+  btn.textContent = 'Search';
+  btn.disabled = false;
+}
+
+function renderImportResults() {
+  const list = document.getElementById('playlist-results-list');
+  list.innerHTML = importResults.map((p, i) => `
+    <label class="playlist-result" id="pr-${i}">
+      <input type="checkbox" value="${i}" checked onchange="togglePlaylistResult(this, ${i})">
+      <div class="playlist-result-info">
+        <div class="playlist-result-name">${escHtml(p.name)}</div>
+        <div class="playlist-result-meta">${p.tracks?.total || 0} tracks</div>
+      </div>
+    </label>
+  `).join('');
+}
+
+function togglePlaylistResult(cb, idx) {
+  document.getElementById(`pr-${idx}`).classList.toggle('selected', cb.checked);
+}
+
+function confirmImport() {
+  const checkboxes = document.querySelectorAll('#playlist-results-list input[type=checkbox]:checked');
+  if (checkboxes.length === 0) { toast('Select at least one playlist', 'error'); return; }
+
+  const hueSceneId = document.getElementById('import-hue-scene-select')?.value || '';
+  const hueSceneName = hueScenes.find(s => s.id === hueSceneId)?.name || '';
+  const folderId = document.getElementById('import-folder-select').value || '';
+
+  let created = 0;
+  checkboxes.forEach(cb => {
+    const p = importResults[parseInt(cb.value)];
+    if (!p) return;
+    scenes.push({
+      id: uid(),
+      name: p.name,
+      spotifyUrl: p.external_urls?.spotify || '',
+      mode: 'both',
+      folderId,
+      hueSceneId,
+      hueSceneName
+    });
+    created++;
+  });
+
+  saveScenesStorage();
+  renderSidebar();
+  renderScenes();
+  closeModal('import-modal');
+  toast(`✦ Imported ${created} scene${created !== 1 ? 's' : ''}`, 'success');
+}
+
+// ═══════════════════════════════════
+// COLOR PRESETS
+// ═══════════════════════════════════
+// color presets removed — using Hue scenes instead
+
+// ═══════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════
+function uid() {
+  return Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+}
+
+function updateTransitionLabel(val) {
+  const lbl = document.getElementById('scene-transition-label');
+  if (!lbl) return;
+  const v = parseFloat(val);
+  lbl.textContent = v < 0 ? 'Use global' : v === 0 ? 'Instant' : v + 's';
+}
+
+function generateCodeVerifier() {
+  const arr = new Uint8Array(64);
+  crypto.getRandomValues(arr);
+  return btoa(String.fromCharCode(...arr)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+
+async function generateCodeChallenge(verifier) {
+  const data = new TextEncoder().encode(verifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+
+function generateState() {
+  const arr = new Uint8Array(16);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+let toastTimer;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 3200);
+}
+// ═══════════════════════════════════
+// NOW PLAYING POLLING + VOLUME
+// ═══════════════════════════════════
+let pollInterval = null;
+let currentDuration = 0;
+let currentProgress = 0;
+let lastProgressUpdate = 0;
+
+function startPolling() {
+  if (pollInterval) return;
+  pollNowPlaying();
+  pollInterval = setInterval(pollNowPlaying, 3000);
+}
+
+function stopPolling() {
+  if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+  document.getElementById('now-playing-info').style.display = 'none';
+}
+
+async function pollNowPlaying() {
+  if (!spotifyToken || spotifyTokenExpiry < Date.now()) return;
+  try {
+    const res = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+      headers: { Authorization: `Bearer ${spotifyToken}` }
+    });
+    if (res.status === 204 || !res.ok) {
+      document.getElementById('now-playing-info').style.display = 'none';
+      return;
+    }
+    const data = await res.json();
+    if (!data || !data.item) return;
+
+    const title = data.item.name || '—';
+    const artist = data.item.artists?.map(a => a.name).join(', ') || '—';
+    const progress = data.progress_ms || 0;
+    const duration = data.item.duration_ms || 1;
+    const volume = data.device?.volume_percent ?? 50;
+
+    currentDuration = duration;
+    currentProgress = progress;
+    lastProgressUpdate = Date.now();
+
+    document.getElementById('now-playing-title').textContent = title;
+    document.getElementById('now-playing-artist').textContent = artist;
+    document.getElementById('progress-current').textContent = formatTime(progress);
+    document.getElementById('progress-total').textContent = formatTime(duration);
+    document.getElementById('progress-fill').style.width = (progress / duration * 100) + '%';
+    document.getElementById('now-playing-info').style.display = 'flex';
+
+
+
+    // Update volume slider only if user isn't actively dragging
+    const volSlider = document.getElementById('volume-slider');
+    const volPct = document.getElementById('volume-pct');
+    if (volSlider && !volSlider.dataset.dragging) volSlider.value = volume;
+    if (volPct && !volSlider?.dataset.dragging) volPct.textContent = volume + '%';
+
+    // Smooth progress between polls
+    smoothProgress();
+  } catch(e) {}
+}
+
+let smoothTimer = null;
+function smoothProgress() {
+  if (smoothTimer) clearInterval(smoothTimer);
+  smoothTimer = setInterval(() => {
+    if (isPaused) return;
+    const elapsed = Date.now() - lastProgressUpdate;
+    const estimated = currentProgress + elapsed;
+    if (currentDuration > 0) {
+      const pct = Math.min(estimated / currentDuration * 100, 100);
+      const fill = document.getElementById('progress-fill');
+      if (fill) fill.style.width = pct + '%';
+      const cur = document.getElementById('progress-current');
+      if (cur) cur.textContent = formatTime(estimated);
+    }
+  }, 500);
+}
+
+function formatTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  return m + ':' + String(s % 60).padStart(2, '0');
+}
+
+
+
+let volumeDebounce = null;
+let cachedDeviceId = null;
+
+function onVolumeInput(val) {
+  const slider = document.getElementById('volume-slider');
+  if (slider) slider.dataset.dragging = '1';
+  document.getElementById('volume-pct').textContent = val + '%';
+  clearTimeout(volumeDebounce);
+  volumeDebounce = setTimeout(() => applyVolume(val), 400);
+}
+
+function onVolumeChange(val) {
+  const slider = document.getElementById('volume-slider');
+  if (slider) delete slider.dataset.dragging;
+  applyVolume(val);
+}
+
+async function applyVolume(val) {
+  if (!spotifyToken) return;
+  if (spotifyTokenExpiry < Date.now()) await refreshSpotifyToken();
+  try {
+    // Get active device if we don't have it cached
+    if (!cachedDeviceId) {
+      const devRes = await fetch('https://api.spotify.com/v1/me/player/devices', {
+        headers: { Authorization: `Bearer ${spotifyToken}` }
+      });
+      const devData = await devRes.json();
+      const device = devData.devices?.find(d => d.is_active) || devData.devices?.[0];
+      cachedDeviceId = device?.id || null;
+    }
+
+    const url = cachedDeviceId
+      ? `https://api.spotify.com/v1/me/player/volume?volume_percent=${Math.round(val)}&device_id=${cachedDeviceId}`
+      : `https://api.spotify.com/v1/me/player/volume?volume_percent=${Math.round(val)}`;
+
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${spotifyToken}` }
+    });
+
+    if (!res.ok && res.status !== 204) {
+      // Device may have changed — clear cache and retry once
+      cachedDeviceId = null;
+      const retryRes = await fetch(
+        `https://api.spotify.com/v1/me/player/volume?volume_percent=${Math.round(val)}`,
+        { method: 'PUT', headers: { Authorization: `Bearer ${spotifyToken}` } }
+      );
+      if (!retryRes.ok && retryRes.status !== 204) {
+        toast('Could not set volume — is Spotify active?', 'error');
+      }
+    }
+  } catch(e) {
+    toast('Volume error', 'error');
+  }
+}
+
+async function seekToPosition(e) {
+  if (!currentDuration || !spotifyToken) return;
+  const bar = e.currentTarget;
+  const pct = e.offsetX / bar.offsetWidth;
+  const posMs = Math.floor(pct * currentDuration);
+  currentProgress = posMs;
+  lastProgressUpdate = Date.now();
+  document.getElementById('progress-fill').style.width = (pct * 100) + '%';
+  document.getElementById('progress-current').textContent = formatTime(posMs);
+  try {
+    await fetch(`https://api.spotify.com/v1/me/player/seek?position_ms=${posMs}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${spotifyToken}` }
+    });
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════
+// DRAG TO REORDER
+// ═══════════════════════════════════
+let dragSrc = null;
+let dragType = null; // 'scene' or 'folder'
+
+function initDragAndDrop() {
+  // Touch + mouse drag for scene cards
+  document.addEventListener('pointerdown', onDragStart);
+  document.addEventListener('pointermove', onDragMove);
+  document.addEventListener('pointerup', onDragEnd);
+  document.addEventListener('pointercancel', onDragEnd);
+}
+
+let dragGhost = null;
+let dragOffsetX = 0, dragOffsetY = 0;
+let dragOverEl = null;
+
+function onDragStart(e) {
+  const handle = e.target.closest('[data-drag-scene]') || e.target.closest('[data-drag-folder-handle]');
+  if (!handle) return;
+
+  if (handle.dataset.dragScene) {
+    dragType = 'scene';
+    dragSrc = handle.dataset.dragScene;
+  } else if (handle.dataset.dragFolderHandle) {
+    dragType = 'folder';
+    dragSrc = handle.dataset.dragFolderHandle;
+  }
+
+  const card = dragType === 'scene'
+    ? document.getElementById(`card-${dragSrc}`)
+    : handle.closest('.sidebar-item');
+  if (!card) return;
+
+  card.classList.add('dragging');
+  dragOffsetX = e.clientX - card.getBoundingClientRect().left;
+  dragOffsetY = e.clientY - card.getBoundingClientRect().top;
+
+  // Create ghost
+  dragGhost = card.cloneNode(true);
+  dragGhost.style.cssText = `position:fixed;pointer-events:none;z-index:9999;opacity:0.85;width:${card.offsetWidth}px;left:${e.clientX - dragOffsetX}px;top:${e.clientY - dragOffsetY}px;`;
+  document.body.appendChild(dragGhost);
+
+  handle.setPointerCapture(e.pointerId);
+  e.preventDefault();
+}
+
+function onDragMove(e) {
+  if (!dragSrc || !dragGhost) return;
+  dragGhost.style.left = (e.clientX - dragOffsetX) + 'px';
+  dragGhost.style.top = (e.clientY - dragOffsetY) + 'px';
+
+  // Find element under cursor (excluding ghost)
+  dragGhost.style.display = 'none';
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  dragGhost.style.display = '';
+
+  // Clear previous drag-over
+  if (dragOverEl) { dragOverEl.classList.remove('drag-over'); dragOverEl = null; }
+
+  if (dragType === 'scene') {
+    const targetCard = el?.closest('.scene-card');
+    if (targetCard && targetCard.id !== `card-${dragSrc}`) {
+      targetCard.classList.add('drag-over');
+      dragOverEl = targetCard;
+    }
+  } else {
+    const targetItem = el?.closest('.sidebar-item[data-drag-folder]');
+    if (targetItem && targetItem.dataset.dragFolder !== dragSrc) {
+      targetItem.classList.add('drag-over');
+      dragOverEl = targetItem;
+    }
+  }
+}
+
+function onDragEnd(e) {
+  if (!dragSrc) return;
+
+  if (dragGhost) { dragGhost.remove(); dragGhost = null; }
+  if (dragOverEl) { dragOverEl.classList.remove('drag-over'); }
+
+  // Apply reorder
+  if (dragOverEl) {
+    if (dragType === 'scene') {
+      const targetId = dragOverEl.id.replace('card-', '');
+      reorderScenes(dragSrc, targetId);
+    } else {
+      const targetId = dragOverEl.dataset.dragFolder;
+      reorderFolders(dragSrc, targetId);
+    }
+  }
+
+  // Cleanup
+  const srcEl = dragType === 'scene'
+    ? document.getElementById(`card-${dragSrc}`)
+    : document.querySelector(`.sidebar-item[data-drag-folder="${dragSrc}"]`);
+  if (srcEl) srcEl.classList.remove('dragging');
+
+  dragSrc = null;
+  dragType = null;
+  dragOverEl = null;
+}
+
+function reorderScenes(srcId, targetId) {
+  const srcIdx = scenes.findIndex(s => s.id === srcId);
+  const tgtIdx = scenes.findIndex(s => s.id === targetId);
+  if (srcIdx === -1 || tgtIdx === -1) return;
+  const [moved] = scenes.splice(srcIdx, 1);
+  scenes.splice(tgtIdx, 0, moved);
+  saveScenesStorage();
+  renderScenes();
+}
+
+function reorderFolders(srcId, targetId) {
+  const srcIdx = folders.findIndex(f => f.id === srcId);
+  const tgtIdx = folders.findIndex(f => f.id === targetId);
+  if (srcIdx === -1 || tgtIdx === -1) return;
+  const [moved] = folders.splice(srcIdx, 1);
+  folders.splice(tgtIdx, 0, moved);
+  saveFoldersStorage();
+  renderSidebar();
+}
+
+// Init drag on load
+initDragAndDrop();
+</script>
+</body>
+</html>

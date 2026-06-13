@@ -3962,14 +3962,16 @@ const CANVAS_STORAGE_KEY = 'dnd_canvas';
 function initCanvas() {
   const canvas = document.getElementById('notes-canvas');
   if (!canvas) return;
-  const container = document.getElementById('notes-canvas-wrap') || canvas.parentElement;
+  const wrap = document.getElementById('notes-canvas-wrap') || canvas.parentElement;
 
-  // Size canvas at device pixel ratio for sharp rendering on high-DPI screens
+  // Use getBoundingClientRect for accurate size after layout
+  const rect = wrap.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  const w = container.clientWidth;
-  const h = container.clientHeight;
-  canvas.width = w * dpr;
-  canvas.height = h * dpr;
+  const w = rect.width;
+  const h = rect.height;
+
+  canvas.width = Math.floor(w * dpr);
+  canvas.height = Math.floor(h * dpr);
   canvas.style.width = w + 'px';
   canvas.style.height = h + 'px';
 

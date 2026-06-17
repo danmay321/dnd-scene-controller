@@ -7,4 +7,4 @@
 
 ---
 
-- **Mon, Jun 15, 2026** — 0m
+- **Wed, Jun 17, 2026** — 0m — Present: Barnes, Matt, Mitch

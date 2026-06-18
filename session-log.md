@@ -7,4 +7,4 @@
 
 ---
 
-- **Wed, Jun 17, 2026** — 0m — Present: Barnes, Matt, Mitch
+- **Wed, Jun 17, 2026** — 0m — Present: Brody, Matt, Michael, Mitch

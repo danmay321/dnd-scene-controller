@@ -3,8 +3,8 @@
 | Stat | Value |
 |---|---|
 | **Total Sessions** | 1 |
-| **Total Time** | 1h31m |
+| **Total Time** | 1m |
 
 ---
 
-- **Wed, Jul 8, 2026** — 1h31m — Present: Barnes, Brody, Matt, Michael, Mitch
+- **Thu, Jul 9, 2026** — 1m — Present: Barnes, Brody, Matt, Michael, Mitch

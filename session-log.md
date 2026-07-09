@@ -3,7 +3,7 @@
 | Stat | Value |
 |---|---|
 | **Total Sessions** | 1 |
-| **Total Time** | 1m |
+| **Total Time** | 1h31m |
 
 ---
 

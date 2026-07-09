@@ -7,4 +7,4 @@
 
 ---
 
-- **Thu, Jul 9, 2026** — 1m — Present: Barnes, Brody, Matt, Michael, Mitch
+- **Thu, Jul 9, 2026** — 1h31m — Present: Barnes, Brody, Matt, Michael, Mitch
